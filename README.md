@@ -52,9 +52,11 @@ This project includes a GitHub Actions workflow that automatically builds the ap
 The workflow:
 1. Sets up JDK 17 and Android SDK
 2. Caches Gradle dependencies for faster builds
-3. Runs tests
-4. Builds both debug and release APKs
-5. Uploads APK artifacts that can be downloaded from the Actions tab
+3. Validates Gradle wrapper for security
+4. Downloads Gradle wrapper JAR if missing (fallback)
+5. Runs tests
+6. Builds both debug and release APKs
+7. Uploads APK artifacts that can be downloaded from the Actions tab
 
 ### Accessing Build Artifacts
 

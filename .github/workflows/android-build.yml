@@ -34,6 +34,16 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
+    - name: Validate Gradle wrapper
+      uses: gradle/wrapper-validation-action@v2
+
+    - name: Download Gradle wrapper jar if missing
+      run: |
+        if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+          echo "Gradle wrapper jar not found, downloading..."
+          curl -L https://raw.githubusercontent.com/gradle/gradle/v8.2.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+        fi
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
