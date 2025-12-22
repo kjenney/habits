@@ -1,5 +1,9 @@
 package com.habittracker.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,12 +11,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,21 +30,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerState
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.habittracker.data.model.Habit
@@ -75,7 +86,7 @@ fun AddEditHabitScreen(
                 title = { Text(if (isEditing) "Edit Habit" else "Add Habit") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -149,7 +160,7 @@ fun AddEditHabitScreen(
                         contentDescription = null
                     )
                     Text(
-                        text = reminderTime ?: "Set reminder time",
+                        text = reminderTime?.let { formatTimeForDisplay(it) } ?: "Set reminder time",
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
@@ -201,7 +212,6 @@ fun AddEditHabitScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerDialog(
     initialTime: String?,
@@ -211,50 +221,159 @@ fun TimePickerDialog(
     val initialHour = initialTime?.split(":")?.getOrNull(0)?.toIntOrNull() ?: 9
     val initialMinute = initialTime?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0
 
-    val timePickerState = rememberTimePickerState(
-        initialHour = initialHour,
-        initialMinute = initialMinute,
-        is24Hour = false
-    )
+    var selectedHour by remember { mutableIntStateOf(initialHour) }
+    var selectedMinute by remember { mutableIntStateOf(initialMinute) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Card(
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Text(
-                text = "Select Time",
-                style = MaterialTheme.typography.titleLarge
-            )
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Select Time",
+                    style = MaterialTheme.typography.titleLarge
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            TimePicker(state = timePickerState)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f)
+                // Time display
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Text("Cancel")
+                    // Hour selector
+                    NumberPicker(
+                        value = selectedHour,
+                        onValueChange = { selectedHour = it },
+                        range = 0..23,
+                        modifier = Modifier.width(80.dp)
+                    )
+
+                    Text(
+                        text = ":",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+
+                    // Minute selector
+                    NumberPicker(
+                        value = selectedMinute,
+                        onValueChange = { selectedMinute = it },
+                        range = 0..59,
+                        modifier = Modifier.width(80.dp)
+                    )
                 }
 
-                Spacer(modifier = Modifier.padding(8.dp))
+                // Display selected time
+                Text(
+                    text = formatTimeForDisplay(
+                        "${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}"
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
-                Button(
-                    onClick = {
-                        val hour = timePickerState.hour.toString().padStart(2, '0')
-                        val minute = timePickerState.minute.toString().padStart(2, '0')
-                        onConfirm("$hour:$minute")
-                    },
-                    modifier = Modifier.weight(1f)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("OK")
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancel")
+                    }
+
+                    Button(
+                        onClick = {
+                            val hour = selectedHour.toString().padStart(2, '0')
+                            val minute = selectedMinute.toString().padStart(2, '0')
+                            onConfirm("$hour:$minute")
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("OK")
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+fun NumberPicker(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    range: IntRange,
+    modifier: Modifier = Modifier
+) {
+    val items = range.toList()
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(value) {
+        val index = items.indexOf(value)
+        if (index >= 0) {
+            listState.animateScrollToItem(maxOf(0, index - 1))
+        }
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.height(120.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            items(items) { item ->
+                val isSelected = item == value
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onValueChange(item) }
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = item.toString().padStart(2, '0'),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+fun formatTimeForDisplay(time: String): String {
+    val parts = time.split(":")
+    if (parts.size != 2) return time
+
+    val hour = parts[0].toIntOrNull() ?: return time
+    val minute = parts[1]
+
+    val period = if (hour < 12) "AM" else "PM"
+    val displayHour = when {
+        hour == 0 -> 12
+        hour > 12 -> hour - 12
+        else -> hour
+    }
+
+    return "$displayHour:$minute $period"
 }

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,12 +34,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,11 +49,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.habittracker.data.model.HabitWithCompletions
 import com.habittracker.ui.theme.Green500
-import com.habittracker.ui.theme.Red500
 import com.habittracker.ui.viewmodel.HabitViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -214,7 +211,6 @@ fun EmptyState() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitList(
     habits: List<HabitWithCompletions>,
@@ -224,6 +220,8 @@ fun HabitList(
     onEditHabit: (Long) -> Unit,
     onDeleteHabit: (HabitWithCompletions) -> Unit
 ) {
+    var habitToDelete by remember { mutableStateOf<HabitWithCompletions?>(null) }
+
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -232,45 +230,39 @@ fun HabitList(
             items = habits,
             key = { it.habit.id }
         ) { habitWithCompletions ->
-            val dismissState = rememberSwipeToDismissBoxState(
-                confirmValueChange = { value ->
-                    if (value == SwipeToDismissBoxValue.EndToStart) {
-                        onDeleteHabit(habitWithCompletions)
-                        true
-                    } else {
-                        false
-                    }
-                }
+            HabitCard(
+                habitWithCompletions = habitWithCompletions,
+                selectedDate = selectedDate,
+                onClick = { onHabitClick(habitWithCompletions.habit.id) },
+                onToggleCompletion = { onToggleCompletion(habitWithCompletions.habit.id) },
+                onEdit = { onEditHabit(habitWithCompletions.habit.id) },
+                onDelete = { habitToDelete = habitWithCompletions }
             )
-
-            SwipeToDismissBox(
-                state = dismissState,
-                backgroundContent = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Red500, RoundedCornerShape(16.dp))
-                            .padding(horizontal = 20.dp),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = Color.White
-                        )
-                    }
-                },
-                enableDismissFromStartToEnd = false
-            ) {
-                HabitCard(
-                    habitWithCompletions = habitWithCompletions,
-                    selectedDate = selectedDate,
-                    onClick = { onHabitClick(habitWithCompletions.habit.id) },
-                    onToggleCompletion = { onToggleCompletion(habitWithCompletions.habit.id) },
-                    onEdit = { onEditHabit(habitWithCompletions.habit.id) }
-                )
-            }
         }
+    }
+
+    // Delete confirmation dialog
+    habitToDelete?.let { habit ->
+        AlertDialog(
+            onDismissRequest = { habitToDelete = null },
+            title = { Text("Delete Habit") },
+            text = { Text("Are you sure you want to delete \"${habit.habit.name}\"? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteHabit(habit)
+                        habitToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { habitToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -280,7 +272,8 @@ fun HabitCard(
     selectedDate: LocalDate,
     onClick: () -> Unit,
     onToggleCompletion: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val dateString = selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
     val isCompleted = habitWithCompletions.completions.any { it.date == dateString }
@@ -358,6 +351,15 @@ fun HabitCard(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Delete button
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
