@@ -84,10 +84,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download release APK
+    - name: Download debug APK
       uses: actions/download-artifact@v4
       with:
-        name: habit-tracker-release
+        name: habit-tracker-debug
         path: ./artifacts
 
     - name: Generate version tag
@@ -113,7 +113,7 @@ jobs:
 
           ---
           Built from commit: ${{ github.sha }}
-        files: ./artifacts/app-release-unsigned.apk
+        files: ./artifacts/app-debug.apk
         draft: false
         prerelease: false
       env:
