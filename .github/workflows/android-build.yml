@@ -72,3 +72,49 @@ jobs:
         name: habit-tracker-release
         path: app/build/outputs/apk/release/app-release-unsigned.apk
         retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download release APK
+      uses: actions/download-artifact@v4
+      with:
+        name: habit-tracker-release
+        path: ./artifacts
+
+    - name: Generate version tag
+      id: version
+      run: |
+        VERSION="v1.0.${{ github.run_number }}"
+        echo "tag=$VERSION" >> $GITHUB_OUTPUT
+        echo "Generated version: $VERSION"
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Habit Tracker ${{ steps.version.outputs.tag }}
+        body: |
+          ## Habit Tracker Release ${{ steps.version.outputs.tag }}
+
+          ### Download
+          Download the APK from the assets below.
+
+          ### Changes
+          ${{ github.event.head_commit.message }}
+
+          ---
+          Built from commit: ${{ github.sha }}
+        files: ./artifacts/app-release-unsigned.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
