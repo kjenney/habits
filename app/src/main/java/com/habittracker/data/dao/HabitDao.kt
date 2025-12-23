@@ -22,7 +22,7 @@ interface HabitDao {
     @Query("SELECT * FROM habits WHERE id = :habitId")
     suspend fun getHabitById(habitId: Long): Habit?
 
-    @Query("SELECT * FROM habits WHERE reminderEnabled = 1 AND isArchived = 0")
+    @Query("SELECT * FROM habits WHERE reminderTime IS NOT NULL AND isArchived = 0")
     suspend fun getHabitsWithReminders(): List<Habit>
 
     @Transaction

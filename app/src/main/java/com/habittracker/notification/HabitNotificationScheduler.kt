@@ -16,9 +16,9 @@ class HabitNotificationScheduler(private val context: Context) {
     private val workManager = WorkManager.getInstance(context)
 
     fun scheduleHabitReminder(habit: Habit) {
-        if (!habit.reminderEnabled || habit.reminderTime == null) return
+        val reminderTimeStr = habit.reminderTime ?: return
 
-        val timeParts = habit.reminderTime.split(":")
+        val timeParts = reminderTimeStr.split(":")
         val hour = timeParts[0].toIntOrNull() ?: return
         val minute = timeParts[1].toIntOrNull() ?: return
 
@@ -58,7 +58,7 @@ class HabitNotificationScheduler(private val context: Context) {
     }
 
     fun rescheduleAllReminders(habits: List<Habit>) {
-        habits.filter { it.reminderEnabled && it.reminderTime != null }
+        habits.filter { it.reminderTime != null }
             .forEach { scheduleHabitReminder(it) }
     }
 

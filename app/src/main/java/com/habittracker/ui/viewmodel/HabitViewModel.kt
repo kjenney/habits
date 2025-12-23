@@ -38,29 +38,23 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
         _selectedDate.value = date
     }
 
-    fun addHabit(name: String, description: String, reminderTime: String?, reminderEnabled: Boolean) {
+    fun addHabit(name: String, description: String, reminderTime: String?, reminderEnabled: Boolean = true) {
         viewModelScope.launch {
             val habit = Habit(
                 name = name,
                 description = description,
                 reminderTime = reminderTime,
-                reminderEnabled = reminderEnabled
+                reminderEnabled = true
             )
             val habitId = repository.insertHabit(habit)
-            if (reminderEnabled && reminderTime != null) {
-                notificationScheduler.scheduleHabitReminder(habit.copy(id = habitId))
-            }
+            notificationScheduler.scheduleHabitReminder(habit.copy(id = habitId))
         }
     }
 
     fun updateHabit(habit: Habit) {
         viewModelScope.launch {
             repository.updateHabit(habit)
-            if (habit.reminderEnabled && habit.reminderTime != null) {
-                notificationScheduler.scheduleHabitReminder(habit)
-            } else {
-                notificationScheduler.cancelHabitReminder(habit.id)
-            }
+            notificationScheduler.scheduleHabitReminder(habit)
         }
     }
 

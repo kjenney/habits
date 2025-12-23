@@ -31,7 +31,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -60,8 +59,7 @@ fun AddEditHabitScreen(
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var reminderEnabled by remember { mutableStateOf(false) }
-    var reminderTime by remember { mutableStateOf<String?>(null) }
+    var reminderTime by remember { mutableStateOf("09:00") }
     var existingHabit by remember { mutableStateOf<Habit?>(null) }
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -74,8 +72,7 @@ fun AddEditHabitScreen(
                 existingHabit = habit
                 name = habit.name
                 description = habit.description
-                reminderEnabled = habit.reminderEnabled
-                reminderTime = habit.reminderTime
+                reminderTime = habit.reminderTime ?: "09:00"
             }
         }
     }
@@ -128,42 +125,24 @@ fun AddEditHabitScreen(
 
             // Reminder section
             Text(
-                text = "Reminder",
+                text = "Daily Reminder",
                 style = MaterialTheme.typography.titleMedium
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            OutlinedButton(
+                onClick = { showTimePicker = true },
+                modifier = Modifier.fillMaxWidth()
             ) {
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = null
+                )
                 Text(
-                    text = "Enable daily reminder",
-                    modifier = Modifier.weight(1f)
+                    text = formatTimeForDisplay(reminderTime),
+                    modifier = Modifier.padding(start = 8.dp)
                 )
-                Switch(
-                    checked = reminderEnabled,
-                    onCheckedChange = { reminderEnabled = it }
-                )
-            }
-
-            if (reminderEnabled) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = { showTimePicker = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AccessTime,
-                        contentDescription = null
-                    )
-                    Text(
-                        text = reminderTime?.let { formatTimeForDisplay(it) } ?: "Set reminder time",
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -176,16 +155,16 @@ fun AddEditHabitScreen(
                                 existingHabit!!.copy(
                                     name = name.trim(),
                                     description = description.trim(),
-                                    reminderEnabled = reminderEnabled,
-                                    reminderTime = if (reminderEnabled) reminderTime else null
+                                    reminderEnabled = true,
+                                    reminderTime = reminderTime
                                 )
                             )
                         } else {
                             viewModel.addHabit(
                                 name = name.trim(),
                                 description = description.trim(),
-                                reminderTime = if (reminderEnabled) reminderTime else null,
-                                reminderEnabled = reminderEnabled
+                                reminderTime = reminderTime,
+                                reminderEnabled = true
                             )
                         }
                         onNavigateBack()
